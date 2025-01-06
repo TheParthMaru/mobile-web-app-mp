@@ -1,10 +1,11 @@
-
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import RegistrationForm from "./components/RegistrationForm";
 import LoginForm from "./components/LoginForm";
 import Dashboard from "./components/Dashboard";
-import "./App.css"; // Ensure you have a CSS file for styling
+import './App.css';
+import './styles.css';
+ 
 
 function App() {
   return (

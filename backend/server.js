@@ -21,6 +21,45 @@ db.connect((err) => {
 	console.log("Connected to database");
 });
 
+// Registration route
+app.post("/api/register", (req, res) => {
+	const { full_name, email, password, dob, bioID } = req.body;
+
+	// Check if all fields are provided
+	if (!full_name || !email || !password || !dob || !bioID) {
+		return res.status(400).json({ error: "All fields are required" });
+	}
+
+	// Check if the user already exists
+	const checkQuery = "SELECT * FROM petitioners WHERE petitioner_email = ?";
+	db.query(checkQuery, [email], (err, result) => {
+		if (err) {
+			return res.status(500).json({ error: "Database query error" });
+		}
+
+		if (result.length > 0) {
+			return res.status(400).json({ error: "User already exists" });
+		}
+
+		// Insert the new user into the database
+		const insertQuery =
+			"INSERT INTO petitioners (fullname, petitioner_email, password_hash, dob, bioID) VALUES (?, ?, ?, ?, ?)";
+		db.query(
+			insertQuery,
+			[full_name, email, password, dob, bioID],
+			(err, result) => {
+				if (err) {
+					console.log(err);
+					return res.status(500).json({ error: "Error registering user" });
+				}
+
+				console.log("User registered:", email);
+				res.json({ message: "Registration successful" });
+			}
+		);
+	});
+});
+
 // Login route
 app.post("/api/login", (req, res) => {
 	const { email, password } = req.body;
