@@ -1,0 +1,36 @@
+/* App.css */
+.App {
+	font-family: Arial, sans-serif;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 100vh;
+	background-color: #f4f4f4;
+}
+
+.home-page {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+}
+
+.card-container {
+	display: flex;
+	justify-content: space-between;
+	gap: 20px;
+	width: 70%; /* Adjust this as necessary */
+}
+
+.card {
+	background-color: #fff;
+	padding: 20px;
+	border-radius: 10px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	width: 45%; /* Adjust this for desired card width */
+}
+
+.card h2 {
+	text-align: center;
+	margin-bottom: 15px;
+}
