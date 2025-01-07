@@ -1,6 +1,7 @@
 const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
@@ -59,12 +60,12 @@ app.post("/api/register", (req, res) => {
 		);
 	});
 });
+// Secret key (for testing)
+const JWT_SECRET_KEY = "abajaba";
 
 // Login route
 app.post("/api/login", (req, res) => {
 	const { email, password } = req.body;
-
-	console.log("Received credentials:", email, password); // Debug log to see what is being sent
 
 	const query = "SELECT * FROM petitioners WHERE petitioner_email = ?";
 	db.query(query, [email], (err, result) => {
@@ -76,18 +77,25 @@ app.post("/api/login", (req, res) => {
 			return res.status(400).json({ error: "User not found" });
 		}
 
-		console.log(result);
-
 		const user = result[0];
 
 		// Compare plain text password
 		if (password !== user.password_hash) {
-			console.log("Passwords do not match"); // Log if passwords don't match
 			return res.status(400).json({ error: "Invalid password" });
 		}
 
-		console.log("Login successful for email:", email);
-		return res.json({ message: "Login successful" });
+		// If credentials are valid, generate a JWT token
+		const token = jwt.sign(
+			{ userId: user.id, email: user.email },
+			JWT_SECRET_KEY,
+			{ expiresIn: "1h" }
+		);
+
+		res.json({
+			message: "Login successful",
+			token: token,
+			fullName: user.fullname,
+		});
 	});
 });
 
