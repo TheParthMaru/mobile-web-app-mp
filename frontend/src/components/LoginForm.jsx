@@ -28,11 +28,17 @@ function LoginForm() {
 				setErrorMessage(errorData.error || "Login failed");
 			} else {
 				const data = await response.json();
+				console.log("Current data: ", data);
+
 				console.log("Login successfull:", data.message);
 				console.log("Logged in user: ", data.fullName);
+				console.log("Email of user: ", data.email);
+
+				const userEmail = data.email;
 
 				// Store the token and full name in localStorage
 				localStorage.setItem("authToken", data.token);
+				localStorage.setItem("email", userEmail);
 				localStorage.setItem("fullName", data.fullName); // Assuming fullName is returned in the response
 
 				// Redirect to the dashboard after successful login
