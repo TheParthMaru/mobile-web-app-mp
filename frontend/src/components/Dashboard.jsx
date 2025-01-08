@@ -67,9 +67,21 @@ function Dashboard() {
 			.catch((err) => console.error(err));
 	};
 
+	// Logout function to clear local storage
+	const handleLogout = () => {
+		localStorage.removeItem("email");
+		localStorage.removeItem("fullName");
+		alert("You have logged out successfully.");
+		// Optionally, you can redirect the user to the login page or home page
+		window.location.href = "/"; // Redirect to the login page
+	};
+
 	return (
 		<div>
 			<h1>Welcome {fullName}</h1>
+
+			{/* Logout Button */}
+			<button onClick={handleLogout}>Logout</button>
 
 			<div>
 				<h2>{editingPetitionId ? "Edit Petition" : "Create Petition"}</h2>
@@ -97,6 +109,13 @@ function Dashboard() {
 						<li key={p.petition_id}>
 							<h3>{p.title}</h3>
 							<p>{p.content}</p>
+							<p>
+								<strong>Status:</strong> {p.status}
+							</p>
+							<p>
+								<strong>Response:</strong>{" "}
+								{p.response || "No response provided"}
+							</p>
 							<button onClick={() => handleDelete(p.petition_id)}>
 								Delete
 							</button>

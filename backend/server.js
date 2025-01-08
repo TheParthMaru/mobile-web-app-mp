@@ -98,6 +98,7 @@ app.post("/api/login", (req, res) => {
 			token: token,
 			fullName: user.fullname,
 			email: user.petitioner_email,
+			password: user.password_hash,
 		});
 	});
 });
@@ -191,6 +192,88 @@ app.delete("/api/petitions/:id", (req, res) => {
 		}
 
 		res.json({ message: "Petition deleted successfully" });
+	});
+});
+
+// Read all petitions with petitioner details
+app.get("/api/allPetitions", (req, res) => {
+	const query = `
+    SELECT 
+      p.petition_id, 
+      p.title, 
+      p.content, 
+      p.status, 
+      p.response, 
+      p.signature_count, 
+      pt.fullname AS petitioner_name
+    FROM 
+      petitions p
+    JOIN 
+      petitioners pt 
+    ON 
+      p.petitioner_email = pt.petitioner_email
+  `;
+
+	db.query(query, (err, results) => {
+		if (err) {
+			console.error(err);
+			return res
+				.status(500)
+				.json({ error: "Database error while fetching petitions" });
+		}
+		res.json({ petitions: results });
+	});
+});
+
+// Update petition status
+app.put("/api/petitions/:id/status", (req, res) => {
+	const { id } = req.params;
+	const { status } = req.body;
+
+	if (!status) {
+		return res.status(400).json({ error: "Status is required" });
+	}
+
+	const query = "UPDATE petitions SET status = ? WHERE petition_id = ?";
+	db.query(query, [status, id], (err, result) => {
+		if (err) {
+			console.error(err);
+			return res
+				.status(500)
+				.json({ error: "Database error while updating status" });
+		}
+
+		if (result.affectedRows === 0) {
+			return res.status(404).json({ error: "Petition not found" });
+		}
+
+		res.json({ message: "Status updated successfully" });
+	});
+});
+
+// Save feedback for a petition
+app.put("/api/petitions/:id/feedback", (req, res) => {
+	const { id } = req.params;
+	const { feedback } = req.body;
+
+	if (!feedback) {
+		return res.status(400).json({ error: "Feedback is required" });
+	}
+
+	const query = "UPDATE petitions SET response = ? WHERE petition_id = ?";
+	db.query(query, [feedback, id], (err, result) => {
+		if (err) {
+			console.error(err);
+			return res
+				.status(500)
+				.json({ error: "Database error while saving feedback" });
+		}
+
+		if (result.affectedRows === 0) {
+			return res.status(404).json({ error: "Petition not found" });
+		}
+
+		res.json({ message: "Feedback saved successfully" });
 	});
 });
 
