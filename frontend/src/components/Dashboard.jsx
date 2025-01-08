@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import "../styles.css";
 
 function Dashboard() {
 	const [petitions, setPetitions] = useState([]);
@@ -78,7 +79,7 @@ function Dashboard() {
 
 	return (
 		<div>
-			<h1>Welcome {fullName}</h1>
+			<h1 className="text-red">Welcome {fullName}</h1>
 
 			{/* Logout Button */}
 			<button onClick={handleLogout}>Logout</button>
