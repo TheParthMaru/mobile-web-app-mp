@@ -1,131 +1,143 @@
 import React, { useState, useEffect } from "react";
 
 function AdminDashboard() {
-  const [threshold, setThreshold] = useState("");
-  const [petitions, setPetitions] = useState([]);
-  const [response, setResponse] = useState("");
+	const [petitions, setPetitions] = useState([]);
+	const [responseText, setResponse] = useState(""); // Renamed to responseText to avoid conflict
+	const [selectedPetition, setSelectedPetition] = useState(null); // For reading a petition
 
-  // Fetch petitions data from the backend
-  useEffect(() => {
-    const fetchPetitions = async () => {
-      try {
-        const response = await fetch("http://localhost:5000/api/petitions");
-        const data = await response.json();
-        setPetitions(data.petitions);
-      } catch (error) {
-        console.error("Error fetching petitions:", error);
-      }
-    };
+	// Fetch petitions data from the backend
+	useEffect(() => {
+		const fetchPetitions = async () => {
+			try {
+				const response = await fetch("http://localhost:5000/api/allPetitions");
+				if (!response.ok) {
+					throw new Error(`Error: ${response.statusText}`);
+				}
+				const data = await response.json();
+				setPetitions(data.petitions || []);
+			} catch (error) {
+				console.error("Error fetching petitions:", error);
+			}
+		};
 
-    fetchPetitions();
-  }, []);
+		fetchPetitions();
+	}, []);
 
-  // Update threshold value
-  const handleThresholdChange = (e) => {
-    setThreshold(e.target.value);
-  };
+	// Handle feedback submission
+	const handleSubmitFeedback = async (petitionId) => {
+		try {
+			const response = await fetch(
+				`http://localhost:5000/api/petitions/${petitionId}/feedback`,
+				{
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ feedback: responseText }), // Using responseText here
+				}
+			);
 
-  // Submit new signature threshold
-  const handleSetThreshold = async (e) => {
-    e.preventDefault();
+			if (!response.ok) {
+				throw new Error("Error saving feedback");
+			}
 
-    try {
-      const response = await fetch("http://localhost:5000/api/setThreshold", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ threshold }),
-      });
-      const data = await response.json();
-      console.log(data);
-      alert("Threshold set successfully!");
-    } catch (error) {
-      console.error("Error setting threshold:", error);
-    }
-  };
+			alert("Feedback submitted successfully!");
+			setResponse(""); // Clear the feedback text area
 
-  // Handle petition response submission
-  const handleRespondToPetition = async (petitionId) => {
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/respond/${petitionId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ response }),
-        }
-      );
-      const data = await response.json();
-      console.log(data);
-      alert("Response submitted and petition closed!");
-    } catch (error) {
-      console.error("Error responding to petition:", error);
-    }
-  };
+			// Update the petition's response in the state
+			setPetitions((prevPetitions) =>
+				prevPetitions.map((petition) =>
+					petition.petition_id === petitionId
+						? { ...petition, response: responseText } // Update with the feedback value
+						: petition
+				)
+			);
+		} catch (error) {
+			console.error("Error saving feedback:", error);
+		}
+	};
 
-  return (
-    <div className="admin-dashboard">
-      <h1>Petitions Committee Dashboard</h1>
+	// Logout function to clear local storage
+	const handleLogout = () => {
+		localStorage.removeItem("email");
+		localStorage.removeItem("fullName");
+		alert("You have logged out successfully.");
+		// Optionally, you can redirect the user to the login page or home page
+		window.location.href = "/"; // Redirect to the login page
+	};
 
-      {/* Set signature threshold */}
-      <div className="threshold-setting">
-        <h2>Set Signature Threshold</h2>
-        <form onSubmit={handleSetThreshold}>
-          <input
-            type="number"
-            value={threshold}
-            onChange={handleThresholdChange}
-            placeholder="Enter signature threshold"
-            required
-          />
-          <button type="submit">Set Threshold</button>
-        </form>
-      </div>
+	return (
+		<div className="admin-dashboard">
+			<h1>Petitions Committee Dashboard</h1>
 
-      {/* Petitions List */}
-      <div className="petitions-list">
-        <h2>Petitions List</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Status</th>
-              <th>Signatures</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {petitions.map((petition) => (
-              <tr key={petition.id}>
-                <td>{petition.title}</td>
-                <td>{petition.status}</td>
-                <td>{petition.signatures}</td>
-                <td>
-                  {petition.status === "open" && petition.signatures >= threshold && (
-                    <div>
-                      <textarea
-                        value={response}
-                        onChange={(e) => setResponse(e.target.value)}
-                        placeholder="Write response"
-                      />
-                      <button
-                        onClick={() => handleRespondToPetition(petition.id)}
-                      >
-                        Submit Response
-                      </button>
-                    </div>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+			{/* Logout Button */}
+			<button onClick={handleLogout}>Logout</button>
+
+			{/* Petitions List */}
+			<div className="petitions-list">
+				<h2>Petitions List</h2>
+				{petitions.length === 0 ? (
+					<p>No petitions available.</p>
+				) : (
+					<table border={1}>
+						<thead>
+							<tr>
+								<th>Title</th>
+								<th>User Name</th>
+								<th>Status</th>
+								<th>Signatures</th>
+								<th>Response</th>
+								<th>Action</th>
+							</tr>
+						</thead>
+						<tbody>
+							{petitions.map((petition) => (
+								<tr key={petition.petition_id}>
+									<td>{petition.title}</td>
+									<td>{petition.petitioner_name}</td>
+									<td>{petition.status}</td>
+									<td>{petition.signatures}</td>
+									<td>{petition.response || "No response provided"}</td>
+									<td>
+										<button onClick={() => setSelectedPetition(petition)}>
+											Read Petition
+										</button>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				)}
+			</div>
+
+			{/* Selected Petition Details */}
+			{selectedPetition && (
+				<div className="petition-details">
+					<h3>Petition Details</h3>
+					<p>
+						<strong>Title:</strong> {selectedPetition.title}
+					</p>
+					<p>
+						<strong>Content:</strong> {selectedPetition.content}
+					</p>
+					<p>
+						<strong>User Name:</strong> {selectedPetition.petitioner_name}
+					</p>
+					<textarea
+						value={responseText} // Changed to responseText
+						onChange={(e) => setResponse(e.target.value)}
+						placeholder="Write feedback"
+					/>
+					<button
+						onClick={() => handleSubmitFeedback(selectedPetition.petition_id)}
+					>
+						Submit Feedback
+					</button>
+					<button onClick={() => setSelectedPetition(null)}>Close</button>
+				</div>
+			)}
+		</div>
+	);
 }
 
 export default AdminDashboard;

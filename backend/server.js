@@ -78,6 +78,8 @@ app.post("/api/login", (req, res) => {
 		}
 
 		const user = result[0];
+		console.log("Current User: ", user);
+		console.log("Current user email: ", user.petitioner_email);
 
 		// Compare plain text password
 		if (password !== user.password_hash) {
@@ -86,16 +88,192 @@ app.post("/api/login", (req, res) => {
 
 		// If credentials are valid, generate a JWT token
 		const token = jwt.sign(
-			{ userId: user.id, email: user.email },
+			{ userId: user.id, email: user.petitioner_email },
 			JWT_SECRET_KEY,
 			{ expiresIn: "1h" }
 		);
 
 		res.json({
-			message: "Login successful",
+			message: "Login successfull",
 			token: token,
 			fullName: user.fullname,
+			email: user.petitioner_email,
+			password: user.password_hash,
 		});
+	});
+});
+
+/**
+ * Petitions flow
+ */
+
+// Create a new petition
+app.post("/api/petitions", (req, res) => {
+	const { petitioner_email, title, content } = req.body;
+
+	if (!petitioner_email || !title || !content) {
+		return res.status(400).json({ error: "All fields are required" });
+	}
+
+	const query =
+		"INSERT INTO petitions (petitioner_email, title, content) VALUES (?, ?, ?)";
+	db.query(query, [petitioner_email, title, content], (err, result) => {
+		if (err) {
+			console.error(err);
+			return res
+				.status(500)
+				.json({ error: "Database error while creating petition" });
+		}
+		res.json({
+			message: "Petition created successfully",
+			petitionId: result.insertId,
+		});
+	});
+});
+
+// Read all petitions for a specific user
+app.get("/api/petitions", (req, res) => {
+	const { email } = req.query;
+
+	if (!email) {
+		return res.status(400).json({ error: "Email is required" });
+	}
+
+	const query = "SELECT * FROM petitions WHERE petitioner_email = ?";
+	db.query(query, [email], (err, results) => {
+		if (err) {
+			console.error(err);
+			return res
+				.status(500)
+				.json({ error: "Database error while fetching petitions" });
+		}
+		res.json(results);
+	});
+});
+
+// Update a petition
+app.put("/api/petitions/:id", (req, res) => {
+	const { id } = req.params;
+	const { title, content, status, response } = req.body;
+
+	const query =
+		"UPDATE petitions SET title = ?, content = ?, status = ?, response = ? WHERE petition_id = ?";
+	db.query(query, [title, content, status, response, id], (err, result) => {
+		if (err) {
+			console.error(err);
+			return res
+				.status(500)
+				.json({ error: "Database error while updating petition" });
+		}
+
+		if (result.affectedRows === 0) {
+			return res.status(404).json({ error: "Petition not found" });
+		}
+
+		res.json({ message: "Petition updated successfully" });
+	});
+});
+
+// Delete a petition
+app.delete("/api/petitions/:id", (req, res) => {
+	const { id } = req.params;
+
+	const query = "DELETE FROM petitions WHERE petition_id = ?";
+	db.query(query, [id], (err, result) => {
+		if (err) {
+			console.error(err);
+			return res
+				.status(500)
+				.json({ error: "Database error while deleting petition" });
+		}
+
+		if (result.affectedRows === 0) {
+			return res.status(404).json({ error: "Petition not found" });
+		}
+
+		res.json({ message: "Petition deleted successfully" });
+	});
+});
+
+// Read all petitions with petitioner details
+app.get("/api/allPetitions", (req, res) => {
+	const query = `
+    SELECT 
+      p.petition_id, 
+      p.title, 
+      p.content, 
+      p.status, 
+      p.response, 
+      p.signature_count, 
+      pt.fullname AS petitioner_name
+    FROM 
+      petitions p
+    JOIN 
+      petitioners pt 
+    ON 
+      p.petitioner_email = pt.petitioner_email
+  `;
+
+	db.query(query, (err, results) => {
+		if (err) {
+			console.error(err);
+			return res
+				.status(500)
+				.json({ error: "Database error while fetching petitions" });
+		}
+		res.json({ petitions: results });
+	});
+});
+
+// Update petition status
+app.put("/api/petitions/:id/status", (req, res) => {
+	const { id } = req.params;
+	const { status } = req.body;
+
+	if (!status) {
+		return res.status(400).json({ error: "Status is required" });
+	}
+
+	const query = "UPDATE petitions SET status = ? WHERE petition_id = ?";
+	db.query(query, [status, id], (err, result) => {
+		if (err) {
+			console.error(err);
+			return res
+				.status(500)
+				.json({ error: "Database error while updating status" });
+		}
+
+		if (result.affectedRows === 0) {
+			return res.status(404).json({ error: "Petition not found" });
+		}
+
+		res.json({ message: "Status updated successfully" });
+	});
+});
+
+// Save feedback for a petition
+app.put("/api/petitions/:id/feedback", (req, res) => {
+	const { id } = req.params;
+	const { feedback } = req.body;
+
+	if (!feedback) {
+		return res.status(400).json({ error: "Feedback is required" });
+	}
+
+	const query = "UPDATE petitions SET response = ? WHERE petition_id = ?";
+	db.query(query, [feedback, id], (err, result) => {
+		if (err) {
+			console.error(err);
+			return res
+				.status(500)
+				.json({ error: "Database error while saving feedback" });
+		}
+
+		if (result.affectedRows === 0) {
+			return res.status(404).json({ error: "Petition not found" });
+		}
+
+		res.json({ message: "Feedback saved successfully" });
 	});
 });
 
