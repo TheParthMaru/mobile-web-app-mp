@@ -66,42 +66,110 @@ function AdminDashboard() {
 		window.location.href = "/"; // Redirect to the login page
 	};
 
+	// Close petition feedback section
+	const handleCloseFeedback = () => {
+		setSelectedPetition(null); // Close feedback section
+	};
+
+	// Close petition (change status to closed)
+	const handleClosePetition = async (petitionId) => {
+		try {
+			const response = await fetch(
+				`http://localhost:5000/api/petitions/${petitionId}/status`,
+				{
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ status: "closed" }), // Change the petition status to closed
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error("Error updating petition status");
+			}
+
+			// Update the status in the state
+			setPetitions((prevPetitions) =>
+				prevPetitions.map((petition) =>
+					petition.petition_id === petitionId
+						? { ...petition, status: "closed" } // Change status to closed
+						: petition
+				)
+			);
+
+			alert("Petition status updated to closed!");
+		} catch (error) {
+			console.error("Error updating petition status:", error);
+		}
+	};
+
 	return (
-		<div className="admin-dashboard">
-			<h1>Petitions Committee Dashboard</h1>
+		<div className="admin-dashboard p-6 bg-gray-100 min-h-screen">
+			<h1 className="text-3xl font-semibold text-center mb-6">
+				Petitions Committee Dashboard
+			</h1>
 
 			{/* Logout Button */}
-			<button onClick={handleLogout}>Logout</button>
+			<button
+				onClick={handleLogout}
+				className="bg-red-500 text-white py-2 px-4 rounded-md mb-6 hover:bg-red-600"
+			>
+				Logout
+			</button>
 
 			{/* Petitions List */}
-			<div className="petitions-list">
-				<h2>Petitions List</h2>
+			<div className="petitions-list mb-6">
+				<h2 className="text-2xl font-semibold mb-4">Petitions List</h2>
 				{petitions.length === 0 ? (
 					<p>No petitions available.</p>
 				) : (
-					<table border={1}>
+					<table className="table-auto w-full border-collapse border border-gray-300">
 						<thead>
 							<tr>
-								<th>Title</th>
-								<th>User Name</th>
-								<th>Status</th>
-								<th>Signatures</th>
-								<th>Response</th>
-								<th>Action</th>
+								<th className="px-4 py-2 border border-gray-300">Title</th>
+								<th className="px-4 py-2 border border-gray-300">User Name</th>
+								<th className="px-4 py-2 border border-gray-300">Status</th>
+								<th className="px-4 py-2 border border-gray-300">Signatures</th>
+								<th className="px-4 py-2 border border-gray-300">Response</th>
+								<th className="px-4 py-2 border border-gray-300">Action</th>
 							</tr>
 						</thead>
 						<tbody>
 							{petitions.map((petition) => (
 								<tr key={petition.petition_id}>
-									<td>{petition.title}</td>
-									<td>{petition.petitioner_name}</td>
-									<td>{petition.status}</td>
-									<td>{petition.signatures}</td>
-									<td>{petition.response || "No response provided"}</td>
-									<td>
-										<button onClick={() => setSelectedPetition(petition)}>
+									<td className="px-4 py-2 border border-gray-300">
+										{petition.title}
+									</td>
+									<td className="px-4 py-2 border border-gray-300">
+										{petition.petitioner_name}
+									</td>
+									<td className="px-4 py-2 border border-gray-300">
+										{petition.status}
+									</td>
+									<td className="px-4 py-2 border border-gray-300">
+										{petition.signatures}
+									</td>
+									<td className="px-4 py-2 border border-gray-300">
+										{petition.response || "No response provided"}
+									</td>
+									<td className="px-4 py-2 border border-gray-300">
+										<button
+											className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600 mb-2"
+											onClick={() => setSelectedPetition(petition)}
+										>
 											Read Petition
 										</button>
+										{petition.status === "open" && (
+											<button
+												className="bg-gray-500 text-white py-1 px-3 rounded hover:bg-gray-600"
+												onClick={() =>
+													handleClosePetition(petition.petition_id)
+												}
+											>
+												Close Petition
+											</button>
+										)}
 									</td>
 								</tr>
 							))}
@@ -112,8 +180,8 @@ function AdminDashboard() {
 
 			{/* Selected Petition Details */}
 			{selectedPetition && (
-				<div className="petition-details">
-					<h3>Petition Details</h3>
+				<div className="petition-details bg-white p-6 border border-gray-300 rounded-md shadow-lg max-w-3xl mx-auto">
+					<h3 className="text-xl font-semibold mb-4">Petition Details</h3>
 					<p>
 						<strong>Title:</strong> {selectedPetition.title}
 					</p>
@@ -126,14 +194,23 @@ function AdminDashboard() {
 					<textarea
 						value={responseText} // Changed to responseText
 						onChange={(e) => setResponse(e.target.value)}
+						className="w-full p-2 border border-gray-300 rounded-md mb-4"
 						placeholder="Write feedback"
 					/>
-					<button
-						onClick={() => handleSubmitFeedback(selectedPetition.petition_id)}
-					>
-						Submit Feedback
-					</button>
-					<button onClick={() => setSelectedPetition(null)}>Close</button>
+					<div className="flex space-x-4">
+						<button
+							className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
+							onClick={() => handleSubmitFeedback(selectedPetition.petition_id)}
+						>
+							Submit Feedback
+						</button>
+						<button
+							className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600"
+							onClick={handleCloseFeedback}
+						>
+							Close Feedback
+						</button>
+					</div>
 				</div>
 			)}
 		</div>
