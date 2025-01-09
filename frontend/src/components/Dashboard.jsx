@@ -13,9 +13,6 @@ function Dashboard() {
 	const email = localStorage.getItem("email");
 	const fullName = localStorage.getItem("fullName");
 
-	console.log("Email from local storage: ", email);
-	console.log("Fullname from local storage: ", fullName);
-
 	useEffect(() => {
 		axios
 			.get(`http://localhost:5000/api/petitions`, { params: { email } })
@@ -68,69 +65,93 @@ function Dashboard() {
 			.catch((err) => console.error(err));
 	};
 
-	// Logout function to clear local storage
 	const handleLogout = () => {
 		localStorage.removeItem("email");
 		localStorage.removeItem("fullName");
 		alert("You have logged out successfully.");
-		// Optionally, you can redirect the user to the login page or home page
-		window.location.href = "/"; // Redirect to the login page
+		window.location.href = "/";
 	};
 
 	return (
-		<div>
-			<h1 className="text-red">Welcome {fullName}</h1>
+		<div className="p-6 bg-gray-100 min-h-screen">
+			<div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
+				<h1 className="text-2xl font-bold text-gray-800 mb-4">
+					Welcome, {fullName}
+				</h1>
 
-			{/* Logout Button */}
-			<button onClick={handleLogout}>Logout</button>
-
-			<div>
-				<h2>{editingPetitionId ? "Edit Petition" : "Create Petition"}</h2>
-				<input
-					name="title"
-					placeholder="Title"
-					value={form.title}
-					onChange={handleChange}
-				/>
-				<textarea
-					name="content"
-					placeholder="Content"
-					value={form.content}
-					onChange={handleChange}
-				/>
-				<button onClick={editingPetitionId ? handleUpdate : handleCreate}>
-					{editingPetitionId ? "Update" : "Create"}
+				<button
+					onClick={handleLogout}
+					className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition mb-6"
+				>
+					Logout
 				</button>
-			</div>
 
-			<div>
-				<h2>Your Petitions</h2>
-				<ul>
-					{petitions.map((p) => (
-						<li key={p.petition_id}>
-							<h3>{p.title}</h3>
-							<p>{p.content}</p>
-							<p>
-								<strong>Status:</strong> {p.status}
-							</p>
-							<p>
-								<strong>Response:</strong>{" "}
-								{p.response || "No response provided"}
-							</p>
-							<button onClick={() => handleDelete(p.petition_id)}>
-								Delete
-							</button>
-							<button
-								onClick={() => {
-									setForm({ title: p.title, content: p.content });
-									setEditingPetitionId(p.petition_id);
-								}}
+				<div className="mb-6">
+					<h2 className="text-xl font-semibold text-gray-700 mb-4">
+						{editingPetitionId ? "Edit Petition" : "Create Petition"}
+					</h2>
+					<input
+						name="title"
+						placeholder="Title"
+						value={form.title}
+						onChange={handleChange}
+						className="w-full border border-gray-300 rounded-md p-2 mb-4"
+					/>
+					<textarea
+						name="content"
+						placeholder="Content"
+						value={form.content}
+						onChange={handleChange}
+						className="w-full border border-gray-300 rounded-md p-2 mb-4"
+					/>
+					<button
+						onClick={editingPetitionId ? handleUpdate : handleCreate}
+						className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+					>
+						{editingPetitionId ? "Update" : "Create"}
+					</button>
+				</div>
+
+				<div>
+					<h2 className="text-xl font-semibold text-gray-700 mb-4">
+						Your Petitions
+					</h2>
+					<ul>
+						{petitions.map((p) => (
+							<li
+								key={p.petition_id}
+								className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4"
 							>
-								Edit
-							</button>
-						</li>
-					))}
-				</ul>
+								<h3 className="text-lg font-bold text-gray-800">{p.title}</h3>
+								<p className="text-gray-600 mb-2">{p.content}</p>
+								<p className="text-sm text-gray-500">
+									<strong>Status:</strong> {p.status}
+								</p>
+								<p className="text-sm text-gray-500 mb-2">
+									<strong>Response:</strong>{" "}
+									{p.response || "No response provided"}
+								</p>
+								<div className="flex space-x-4">
+									<button
+										onClick={() => handleDelete(p.petition_id)}
+										className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition"
+									>
+										Delete
+									</button>
+									<button
+										onClick={() => {
+											setForm({ title: p.title, content: p.content });
+											setEditingPetitionId(p.petition_id);
+										}}
+										className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600 transition"
+									>
+										Edit
+									</button>
+								</div>
+							</li>
+						))}
+					</ul>
+				</div>
 			</div>
 		</div>
 	);

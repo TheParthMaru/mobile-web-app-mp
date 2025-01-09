@@ -24,14 +24,12 @@ function App() {
 
 function HomePage() {
 	return (
-		<div className="home-page">
-			<div className="card-container">
-				<div className="card">
-					<h2>Register</h2>
+		<div className="flex justify-center items-center min-h-screen bg-gray-100">
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
+				<div className="p-4">
 					<RegistrationForm />
 				</div>
-				<div className="card">
-					<h2>Login</h2>
+				<div className="p-4">
 					<LoginForm />
 				</div>
 			</div>
