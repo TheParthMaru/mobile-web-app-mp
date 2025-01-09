@@ -24,13 +24,18 @@ function App() {
 
 function HomePage() {
 	return (
-		<div className="flex justify-center items-center min-h-screen bg-gray-100">
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
-				<div className="p-4">
-					<RegistrationForm />
-				</div>
-				<div className="p-4">
-					<LoginForm />
+		<div>
+			<h1 className="flex justify-center text-3xl mt-3 mb-5 font-bold text-black-700 text-center">
+				Shangri-La Petition Platform{" "}
+			</h1>
+			<div className="flex justify-center items-center bg-gray-100">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+					<div className="p-4">
+						<RegistrationForm />
+					</div>
+					<div className="p-4">
+						<LoginForm />
+					</div>
 				</div>
 			</div>
 		</div>
