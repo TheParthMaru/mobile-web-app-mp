@@ -9,7 +9,7 @@ function AdminDashboard() {
 	useEffect(() => {
 		const fetchPetitions = async () => {
 			try {
-				const response = await fetch("http://localhost:5000/api/allPetitions");
+				const response = await fetch("http://localhost:5000/slpp/petitions");
 				if (!response.ok) {
 					throw new Error(`Error: ${response.statusText}`);
 				}
@@ -27,7 +27,7 @@ function AdminDashboard() {
 	const handleSubmitFeedback = async (petitionId) => {
 		try {
 			const response = await fetch(
-				`http://localhost:5000/api/petitions/${petitionId}/feedback`,
+				`http://localhost:5000/slpp/user-petition/${petitionId}/feedback`,
 				{
 					method: "PUT",
 					headers: {
@@ -75,7 +75,7 @@ function AdminDashboard() {
 	const handleClosePetition = async (petitionId) => {
 		try {
 			const response = await fetch(
-				`http://localhost:5000/api/petitions/${petitionId}/status`,
+				`http://localhost:5000/slpp/user-petition/${petitionId}/status`,
 				{
 					method: "PUT",
 					headers: {
