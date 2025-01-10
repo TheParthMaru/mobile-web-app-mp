@@ -35,7 +35,7 @@ function LoginForm() {
 
 		// If not admin, proceed with the API call for user authentication
 		try {
-			const response = await fetch("http://localhost:5000/api/login", {
+			const response = await fetch("http://localhost:5000/slpp/login", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",

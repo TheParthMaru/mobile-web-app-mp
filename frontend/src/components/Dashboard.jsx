@@ -15,7 +15,7 @@ function Dashboard() {
 
 	useEffect(() => {
 		axios
-			.get(`http://localhost:5000/api/petitions`, { params: { email } })
+			.get(`http://localhost:5000/slpp/user-petitions`, { params: { email } })
 			.then((response) => setPetitions(response.data))
 			.catch((err) => console.error(err));
 	}, [email]);
@@ -27,7 +27,7 @@ function Dashboard() {
 
 	const handleCreate = () => {
 		axios
-			.post(`http://localhost:5000/api/petitions`, {
+			.post(`http://localhost:5000/slpp/create-petition`, {
 				...form,
 				petitioner_email: email,
 			})
@@ -43,7 +43,10 @@ function Dashboard() {
 
 	const handleUpdate = () => {
 		axios
-			.put(`http://localhost:5000/api/petitions/${editingPetitionId}`, form)
+			.put(
+				`http://localhost:5000/slpp/user-petition/${editingPetitionId}`,
+				form
+			)
 			.then(() => {
 				setPetitions((prev) =>
 					prev.map((p) =>
@@ -58,7 +61,7 @@ function Dashboard() {
 
 	const handleDelete = (id) => {
 		axios
-			.delete(`http://localhost:5000/api/petitions/${id}`)
+			.delete(`http://localhost:5000/slpp/user-petition/${id}`)
 			.then(() =>
 				setPetitions((prev) => prev.filter((p) => p.petition_id !== id))
 			)

@@ -23,7 +23,7 @@ db.connect((err) => {
 });
 
 // Registration route
-app.post("/api/register", (req, res) => {
+app.post("/slpp/register", (req, res) => {
 	const { full_name, email, password, dob, bioID } = req.body;
 
 	// Check if all fields are provided
@@ -64,7 +64,7 @@ app.post("/api/register", (req, res) => {
 const JWT_SECRET_KEY = "abajaba";
 
 // Login route
-app.post("/api/login", (req, res) => {
+app.post("/slpp/login", (req, res) => {
 	const { email, password } = req.body;
 
 	const query = "SELECT * FROM petitioners WHERE petitioner_email = ?";
@@ -108,7 +108,7 @@ app.post("/api/login", (req, res) => {
  */
 
 // Create a new petition
-app.post("/api/petitions", (req, res) => {
+app.post("/slpp/create-petition", (req, res) => {
 	const { petitioner_email, title, content } = req.body;
 
 	if (!petitioner_email || !title || !content) {
@@ -132,7 +132,7 @@ app.post("/api/petitions", (req, res) => {
 });
 
 // Read all petitions for a specific user
-app.get("/api/petitions", (req, res) => {
+app.get("/slpp/user-petitions", (req, res) => {
 	const { email } = req.query;
 
 	if (!email) {
@@ -152,7 +152,7 @@ app.get("/api/petitions", (req, res) => {
 });
 
 // Update a petition
-app.put("/api/petitions/:id", (req, res) => {
+app.put("/slpp/user-petition/:id", (req, res) => {
 	const { id } = req.params;
 	const { title, content, status, response } = req.body;
 
@@ -175,7 +175,7 @@ app.put("/api/petitions/:id", (req, res) => {
 });
 
 // Delete a petition
-app.delete("/api/petitions/:id", (req, res) => {
+app.delete("/slpp/user-petition/:id", (req, res) => {
 	const { id } = req.params;
 
 	const query = "DELETE FROM petitions WHERE petition_id = ?";
@@ -195,26 +195,34 @@ app.delete("/api/petitions/:id", (req, res) => {
 	});
 });
 
-// Read all petitions with petitioner details
-app.get("/api/allPetitions", (req, res) => {
-	const query = `
-    SELECT 
-      p.petition_id, 
-      p.title, 
-      p.content, 
-      p.status, 
-      p.response, 
-      p.signature_count, 
-      pt.fullname AS petitioner_name
-    FROM 
-      petitions p
-    JOIN 
-      petitioners pt 
-    ON 
-      p.petitioner_email = pt.petitioner_email
-  `;
+// Read all petitions with petitioner details, optionally filtered by status
+app.get("/slpp/petitions", (req, res) => {
+	const { status } = req.query;
 
-	db.query(query, (err, results) => {
+	// Base query
+	let query = `
+		SELECT 
+			p.petition_id, 
+			p.title, 
+			p.content, 
+			p.status, 
+			p.response, 
+			p.signature_count, 
+			pt.fullname AS petitioner_name
+		FROM 
+			petitions p
+		JOIN 
+			petitioners pt 
+		ON 
+			p.petitioner_email = pt.petitioner_email
+	`;
+
+	// Add status filter if provided
+	if (status) {
+		query += ` WHERE p.status = ?`;
+	}
+
+	db.query(query, [status], (err, results) => {
 		if (err) {
 			console.error(err);
 			return res
@@ -226,7 +234,7 @@ app.get("/api/allPetitions", (req, res) => {
 });
 
 // Update petition status
-app.put("/api/petitions/:id/status", (req, res) => {
+app.put("/slpp/user-petition/:id/status", (req, res) => {
 	const { id } = req.params;
 	const { status } = req.body;
 
@@ -252,7 +260,7 @@ app.put("/api/petitions/:id/status", (req, res) => {
 });
 
 // Save feedback for a petition
-app.put("/api/petitions/:id/feedback", (req, res) => {
+app.put("/slpp/user-petition/:id/feedback", (req, res) => {
 	const { id } = req.params;
 	const { feedback } = req.body;
 
