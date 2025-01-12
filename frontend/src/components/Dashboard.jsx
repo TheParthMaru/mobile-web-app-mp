@@ -3,7 +3,8 @@ import axios from "axios";
 import "../styles.css";
 
 function Dashboard() {
-	const [petitions, setPetitions] = useState([]);
+	const [myPetitions, setMyPetitions] = useState([]);
+	const [otherPetitions, setOtherPetitions] = useState([]);
 	const [form, setForm] = useState({
 		title: "",
 		content: "",
@@ -16,9 +17,19 @@ function Dashboard() {
 	useEffect(() => {
 		axios
 			.get(`http://localhost:5000/slpp/user-petitions`, { params: { email } })
-			.then((response) => setPetitions(response.data))
+			.then((response) => setMyPetitions(response.data))
 			.catch((err) => console.error(err));
 	}, [email]);
+
+	const includeStatus = "open";
+	useEffect(() => {
+		axios
+			.get("http://localhost:5000/slpp/petitions", {
+				params: { includeStatus, excludeEmail: email },
+			})
+			.then((response) => setOtherPetitions(response.data.petitions))
+			.catch((err) => console.error(err));
+	}, [includeStatus, email]);
 
 	const handleChange = (e) => {
 		const { name, value } = e.target;
@@ -32,7 +43,7 @@ function Dashboard() {
 				petitioner_email: email,
 			})
 			.then((response) => {
-				setPetitions((prev) => [
+				setMyPetitions((prev) => [
 					...prev,
 					{ ...form, petition_id: response.data.petitionId },
 				]);
@@ -48,7 +59,7 @@ function Dashboard() {
 				form
 			)
 			.then(() => {
-				setPetitions((prev) =>
+				setMyPetitions((prev) =>
 					prev.map((p) =>
 						p.petition_id === editingPetitionId ? { ...p, ...form } : p
 					)
@@ -63,7 +74,7 @@ function Dashboard() {
 		axios
 			.delete(`http://localhost:5000/slpp/user-petition/${id}`)
 			.then(() =>
-				setPetitions((prev) => prev.filter((p) => p.petition_id !== id))
+				setMyPetitions((prev) => prev.filter((p) => p.petition_id !== id))
 			)
 			.catch((err) => console.error(err));
 	};
@@ -120,18 +131,23 @@ function Dashboard() {
 						Your Petitions
 					</h2>
 					<ul>
-						{petitions.map((p) => (
+						{myPetitions.map((p) => (
 							<li
 								key={p.petition_id}
 								className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4"
 							>
-								<h3 className="text-lg font-bold text-gray-800">{p.title}</h3>
-								<p className="text-gray-600 mb-2">{p.content}</p>
+								<h3 className="text-lg font-bold text-gray-800">
+									<strong>Title: </strong> {p.title}
+								</h3>
+								<p className="text-gray-600 mb-2">
+									<strong>Content: </strong>
+									{p.content}
+								</p>
 								<p className="text-sm text-gray-500">
-									<strong>Status:</strong> {p.status}
+									<strong>Status: </strong> {p.status}
 								</p>
 								<p className="text-sm text-gray-500 mb-2">
-									<strong>Response:</strong>{" "}
+									<strong>Response: </strong>{" "}
 									{p.response || "No response provided"}
 								</p>
 								<div className="flex space-x-4">
@@ -151,6 +167,37 @@ function Dashboard() {
 										Edit
 									</button>
 								</div>
+							</li>
+						))}
+					</ul>
+				</div>
+
+				{/* View other open petitions */}
+				<div>
+					<h2 className="text-xl font-semibold text-gray-700 mb-4">
+						Other Open Petitions
+					</h2>
+					<ul>
+						{otherPetitions.map((p) => (
+							<li
+								key={p.petition_id}
+								className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4"
+							>
+								<h3 className="text-lg font-bold text-gray-800">
+									<strong>Title: </strong>
+									{p.title}
+								</h3>
+								<p className="text-gray-600 mb-2">
+									<strong>Content: </strong>
+									{p.content}
+								</p>
+								<p className="text-sm text-gray-500">
+									<strong>Status: </strong> {p.status}
+								</p>
+								<p className="text-sm text-gray-500 mb-2">
+									<strong>Response: </strong>{" "}
+									{p.response || "No response provided"}
+								</p>
 							</li>
 						))}
 					</ul>
