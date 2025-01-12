@@ -225,32 +225,44 @@ app.delete("/slpp/user-petition/:id", (req, res) => {
 
 // Read all petitions with petitioner details, optionally filtered by status
 app.get("/slpp/petitions", (req, res) => {
-	const { status } = req.query;
+	const { status, excludeEmail } = req.query;
 
 	// Base query
 	let query = `
-		SELECT 
-			p.petition_id, 
-			p.title, 
-			p.content, 
-			p.status, 
-			p.response, 
-			p.signature_count, 
-			pt.fullname AS petitioner_name
-		FROM 
-			petitions p
-		JOIN 
-			petitioners pt 
-		ON 
-			p.petitioner_email = pt.petitioner_email
+	   SELECT 
+		  p.petition_id, 
+		  p.title, 
+		  p.content, 
+		  p.status, 
+		  p.response, 
+		  p.signature_count, 
+		  pt.fullname AS petitioner_name
+	   FROM 
+		  petitions p
+	   JOIN 
+		  petitioners pt 
+	   ON 
+		  p.petitioner_email = pt.petitioner_email
 	`;
 
-	// Add status filter if provided
+	const queryParams = [];
+
+	// Add conditions for status and excluding specific email
+	const conditions = [];
 	if (status) {
-		query += ` WHERE p.status = ?`;
+		conditions.push(`p.status = ?`);
+		queryParams.push(status);
+	}
+	if (excludeEmail) {
+		conditions.push(`p.petitioner_email != ?`);
+		queryParams.push(excludeEmail);
 	}
 
-	db.query(query, [status], (err, results) => {
+	if (conditions.length > 0) {
+		query += ` WHERE ${conditions.join(" AND ")}`;
+	}
+
+	db.query(query, queryParams, (err, results) => {
 		if (err) {
 			console.error(err);
 			return res
