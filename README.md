@@ -16,3 +16,9 @@
 - `cd` to `frontend`.
 - Run `npm install` which installs all the necessary packages and dependencies from `package.json`.
 - Run the application using `npm run dev` command.
+
+## Authentication
+
+- Both users and admin can login through the common `Login` UI card.
+- When logged in through admin credentials, it will redirect it to Admin Dashboard.
+- When logged in through user credentials, it will redirect it to User Dashboard.
