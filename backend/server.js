@@ -32,34 +32,62 @@ app.post("/slpp/register", (req, res) => {
 	}
 
 	// Check if the user already exists
-	const checkQuery = "SELECT * FROM petitioners WHERE petitioner_email = ?";
-	db.query(checkQuery, [email], (err, result) => {
+	const checkUserQuery = "SELECT * FROM petitioners WHERE petitioner_email = ?";
+	db.query(checkUserQuery, [email], (err, userResult) => {
 		if (err) {
 			return res.status(500).json({ error: "Database query error" });
 		}
 
-		if (result.length > 0) {
+		if (userResult.length > 0) {
 			return res.status(400).json({ error: "User already exists" });
 		}
 
-		// Insert the new user into the database
-		const insertQuery =
-			"INSERT INTO petitioners (fullname, petitioner_email, password_hash, dob, bioID) VALUES (?, ?, ?, ?, ?)";
-		db.query(
-			insertQuery,
-			[full_name, email, password, dob, bioID],
-			(err, result) => {
-				if (err) {
-					console.log(err);
-					return res.status(500).json({ error: "Error registering user" });
-				}
-
-				console.log("User registered:", email);
-				res.json({ message: "Registration successful" });
+		// Check if the BioID is valid and not already used
+		const checkBioIDQuery = "SELECT * FROM bioid WHERE code = ?";
+		db.query(checkBioIDQuery, [bioID], (err, bioIDResult) => {
+			if (err) {
+				return res.status(500).json({ error: "Database query error" });
 			}
-		);
+
+			// If BioID doesn't exist or is already used
+			if (bioIDResult.length === 0) {
+				return res.status(400).json({ error: "Invalid BioID" });
+			}
+			if (bioIDResult[0].used > 0) {
+				return res.status(400).json({ error: "BioID already used." });
+			}
+
+			// Insert the new user into the database
+			const insertUserQuery =
+				"INSERT INTO petitioners (fullname, petitioner_email, password_hash, dob, bioID) VALUES (?, ?, ?, ?, ?)";
+			db.query(
+				insertUserQuery,
+				[full_name, email, password, dob, bioID],
+				(err, insertResult) => {
+					if (err) {
+						console.log(err);
+						return res.status(500).json({ error: "Error registering user" });
+					}
+
+					// Update the BioID to mark it as used
+					const updateBioIDQuery = "UPDATE bioid SET used = 1 WHERE code = ?";
+					db.query(updateBioIDQuery, [bioID], (err) => {
+						if (err) {
+							console.error(err);
+							return res
+								.status(500)
+								.json({ error: "Error updating BioID status" });
+						}
+
+						console.log("User registered and BioID updated:", email);
+						res.json({ message: "Registration successful" });
+					});
+				}
+			);
+		});
 	});
 });
+
 // Secret key (for testing)
 const JWT_SECRET_KEY = "abajaba";
 
