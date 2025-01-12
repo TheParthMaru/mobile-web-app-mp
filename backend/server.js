@@ -22,6 +22,30 @@ db.connect((err) => {
 	console.log("Connected to database");
 });
 
+// Function to initialize the database
+// We are creating this table for storing the users who signed a particular petition.
+async function initializeDatabase() {
+	try {
+		const connection = db;
+
+		// Create 'petition_signatures' table if it doesn't exist
+		const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS petition_signatures (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_email VARCHAR(255) NOT NULL,
+      petition_id INT NOT NULL,
+      UNIQUE KEY unique_signature (user_email, petition_id)
+    )
+  `;
+		connection.query(createTableQuery);
+		console.log("Database initialized: petition_signatures table is ready.");
+	} catch (error) {
+		console.error("Error initializing database:", error);
+	}
+}
+
+initializeDatabase();
+
 // Registration route
 app.post("/slpp/register", (req, res) => {
 	const { full_name, email, password, dob, bioID } = req.body;
@@ -106,8 +130,6 @@ app.post("/slpp/login", (req, res) => {
 		}
 
 		const user = result[0];
-		console.log("Current User: ", user);
-		console.log("Current user email: ", user.petitioner_email);
 
 		// Compare plain text password
 		if (password !== user.password_hash) {
@@ -126,7 +148,6 @@ app.post("/slpp/login", (req, res) => {
 			token: token,
 			fullName: user.fullname,
 			email: user.petitioner_email,
-			password: user.password_hash,
 		});
 	});
 });
@@ -143,20 +164,28 @@ app.post("/slpp/create-petition", (req, res) => {
 		return res.status(400).json({ error: "All fields are required" });
 	}
 
+	const status = "open";
+	const signature_count = 0;
+	const response = "No response provided";
+
 	const query =
-		"INSERT INTO petitions (petitioner_email, title, content) VALUES (?, ?, ?)";
-	db.query(query, [petitioner_email, title, content], (err, result) => {
-		if (err) {
-			console.error(err);
-			return res
-				.status(500)
-				.json({ error: "Database error while creating petition" });
+		"INSERT INTO petitions (petitioner_email, title, content, status, response, signature_count) VALUES (?, ?, ?, ?, ?, ?)";
+	db.query(
+		query,
+		[petitioner_email, title, content, status, response, signature_count],
+		(err, result) => {
+			if (err) {
+				console.error(err);
+				return res
+					.status(500)
+					.json({ error: "Database error while creating petition" });
+			}
+			res.json({
+				message: "Petition created successfully",
+				petitionId: result.insertId,
+			});
 		}
-		res.json({
-			message: "Petition created successfully",
-			petitionId: result.insertId,
-		});
-	});
+	);
 });
 
 // Read all petitions for a specific user
@@ -229,21 +258,21 @@ app.get("/slpp/petitions", (req, res) => {
 
 	// Base query
 	let query = `
-	   SELECT 
-		  p.petition_id, 
-		  p.title, 
-		  p.content, 
-		  p.status, 
-		  p.response, 
-		  p.signature_count, 
-		  pt.fullname AS petitioner_name
-	   FROM 
-		  petitions p
-	   JOIN 
-		  petitioners pt 
-	   ON 
-		  p.petitioner_email = pt.petitioner_email
-	`;
+     SELECT 
+        p.petition_id, 
+        p.title, 
+        p.content, 
+        p.status, 
+        p.response, 
+        p.signature_count, 
+        pt.fullname AS petitioner_name
+     FROM 
+        petitions p
+     JOIN 
+        petitioners pt 
+     ON 
+        p.petitioner_email = pt.petitioner_email
+  `;
 
 	const queryParams = [];
 
@@ -325,7 +354,57 @@ app.put("/slpp/user-petition/:id/feedback", (req, res) => {
 	});
 });
 
+// Petition signing route
+app.post("/slpp/sign-petition", (req, res) => {
+	console.log("Received body:", req.body);
+	const { email, petitionId } = req.body;
+	const user_email = email;
+	const petition_id = petitionId;
+
+	if (!user_email || !petition_id) {
+		return res
+			.status(400)
+			.json({ error: "Email and petition ID are required" });
+	}
+
+	// Check if the user has already signed the petition
+	const checkSignatureQuery =
+		"SELECT * FROM petition_signatures WHERE user_email = ? AND petition_id = ?";
+	db.query(checkSignatureQuery, [user_email, petition_id], (err, result) => {
+		if (err) {
+			return res.status(500).json({ error: "Database query error" });
+		}
+
+		if (result.length > 0) {
+			return res
+				.status(400)
+				.json({ error: "User has already signed this petition" });
+		}
+
+		// Add signature
+		const insertSignatureQuery =
+			"INSERT INTO petition_signatures (user_email, petition_id) VALUES (?, ?)";
+		db.query(insertSignatureQuery, [user_email, petition_id], (err, result) => {
+			if (err) {
+				return res.status(500).json({ error: "Database error" });
+			}
+
+			// Update petition signature count
+			const updatePetitionQuery =
+				"UPDATE petitions SET signature_count = signature_count + 1 WHERE petition_id = ?";
+			db.query(updatePetitionQuery, [petition_id], (err) => {
+				if (err) {
+					return res.status(500).json({ error: "Failed to update petition" });
+				}
+
+				res.json({ message: "Petition signed successfully" });
+			});
+		});
+	});
+});
+
 // Start the server
-app.listen(5000, () => {
-	console.log("Server is running on port 5000");
+const port = 5000;
+app.listen(port, () => {
+	console.log(`Server is running on port ${port}`);
 });
