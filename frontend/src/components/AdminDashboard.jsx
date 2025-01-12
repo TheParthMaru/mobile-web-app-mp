@@ -55,6 +55,8 @@ function AdminDashboard() {
 		} catch (error) {
 			console.error("Error saving feedback:", error);
 		}
+
+		handleClosePetition(petitionId);
 	};
 
 	// Logout function to clear local storage
@@ -148,7 +150,7 @@ function AdminDashboard() {
 										{petition.status}
 									</td>
 									<td className="px-4 py-2 border border-gray-300">
-										{petition.signatures}
+										{petition.signature_count}
 									</td>
 									<td className="px-4 py-2 border border-gray-300">
 										{petition.response || "No response provided"}
@@ -190,6 +192,9 @@ function AdminDashboard() {
 					</p>
 					<p>
 						<strong>User Name:</strong> {selectedPetition.petitioner_name}
+					</p>
+					<p>
+						<strong>Signature Count:</strong> {selectedPetition.signature_count}
 					</p>
 					<textarea
 						value={responseText} // Changed to responseText

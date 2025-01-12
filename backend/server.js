@@ -298,7 +298,9 @@ app.get("/slpp/petitions", (req, res) => {
 				.status(500)
 				.json({ error: "Database error while fetching petitions" });
 		}
-		res.json({ petitions: results });
+		// console.log("Results for admin: ", results);
+
+		return res.json({ petitions: results });
 	});
 });
 
