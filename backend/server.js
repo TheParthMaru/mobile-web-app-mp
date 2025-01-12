@@ -24,7 +24,7 @@ db.connect((err) => {
 
 // Function to initialize the database
 // We are creating this table for storing the users who signed a particular petition.
-async function initializeDatabase() {
+async function createSignaturePetitionTable() {
 	try {
 		const connection = db;
 
@@ -44,7 +44,39 @@ async function initializeDatabase() {
 	}
 }
 
-initializeDatabase();
+createSignaturePetitionTable();
+
+async function createThresholdTable() {
+	try {
+		const connection = db;
+
+		// Create 'petition_signatures' table if it doesn't exist
+		const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS signature_threshold (
+      current_threshold INT
+    );
+  `;
+		connection.query(createTableQuery);
+		console.log("Database initialized: signature_threshold table is ready.");
+
+		// Ensure there's at least one row
+		const insertDefaultRow = `
+		INSERT IGNORE INTO signature_threshold (current_threshold)
+		VALUES (0);
+		`;
+		connection.query(insertDefaultRow, (err) => {
+			if (err) {
+				console.error("Error inserting default row:", err);
+			} else {
+				console.log("Default row initialized in signature_threshold table.");
+			}
+		});
+	} catch (error) {
+		console.error("Error initializing database:", error);
+	}
+}
+
+createThresholdTable();
 
 // Registration route
 app.post("/slpp/register", (req, res) => {
@@ -419,6 +451,55 @@ app.get("/slpp/signed-petitions", (req, res) => {
 				.json({ error: "Database error while fetching petitions" });
 		}
 		return res.json({ signedPetitions: results });
+	});
+});
+
+/**
+ * Signature Threshold
+ */
+
+// Getting the current threshold value
+app.get("/slpp/threshold", (req, res) => {
+	const query =
+		"SELECT current_threshold FROM signature_threshold order by current_threshold desc;";
+	db.query(query, (err, result) => {
+		if (err) {
+			console.error(err);
+			return res
+				.status(500)
+				.json({ error: "Database error while fetching threshold" });
+		}
+		console.log("Current threshold from get: ", result[0].current_threshold);
+
+		return res.json({ currentThreshold: result[0].current_threshold });
+	});
+});
+
+// Updating the current threshold value
+app.put("/slpp/threshold", (req, res) => {
+	const { threshold } = req.body;
+	console.log("Current threshold received at backend: ", threshold);
+
+	const query = "UPDATE signature_threshold SET current_threshold = ?";
+	db.query(query, [threshold], (err, result) => {
+		if (err) {
+			console.error(err);
+			return res
+				.status(500)
+				.json({ error: "Database error while updating current threshold" });
+		}
+		console.log(result);
+
+		if (result.affectedRows > 0) {
+			return res.json({
+				message: "Current threshold updated successfully",
+				currentThreshold: threshold,
+			});
+		} else {
+			return res.status(400).json({
+				error: "No rows were updated. Please check the database state.",
+			});
+		}
 	});
 });
 

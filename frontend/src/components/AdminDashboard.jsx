@@ -2,26 +2,62 @@ import React, { useState, useEffect } from "react";
 
 function AdminDashboard() {
 	const [petitions, setPetitions] = useState([]);
-	const [responseText, setResponse] = useState(""); // Renamed to responseText to avoid conflict
-	const [selectedPetition, setSelectedPetition] = useState(null); // For reading a petition
+	const [responseText, setResponse] = useState("");
+	const [selectedPetition, setSelectedPetition] = useState(null);
+	const [threshold, setThreshold] = useState(""); // For the signature threshold input
+	const [currentThreshold, setCurrentThreshold] = useState(0); // Current threshold from the DB
 
-	// Fetch petitions data from the backend
+	// Fetch petitions and threshold data from the backend
 	useEffect(() => {
-		const fetchPetitions = async () => {
+		const fetchData = async () => {
 			try {
-				const response = await fetch("http://localhost:5000/slpp/petitions");
-				if (!response.ok) {
-					throw new Error(`Error: ${response.statusText}`);
+				// Fetch petitions
+				const petitionsResponse = await fetch(
+					"http://localhost:5000/slpp/petitions"
+				);
+				if (!petitionsResponse.ok) {
+					throw new Error(`Error: ${petitionsResponse.statusText}`);
 				}
-				const data = await response.json();
-				setPetitions(data.petitions || []);
+				const petitionsData = await petitionsResponse.json();
+				setPetitions(petitionsData.petitions || []);
+
+				// Fetch current signature threshold
+				const thresholdResponse = await fetch(
+					"http://localhost:5000/slpp/threshold"
+				);
+				if (!thresholdResponse.ok) {
+					throw new Error(`Error: ${thresholdResponse.statusText}`);
+				}
+				const thresholdData = await thresholdResponse.json();
+				setCurrentThreshold(thresholdData.currentThreshold || 0);
 			} catch (error) {
-				console.error("Error fetching petitions:", error);
+				console.error("Error fetching data:", error);
 			}
 		};
 
-		fetchPetitions();
+		fetchData();
 	}, []);
+
+	// Update the signature threshold
+	const handleThresholdSubmit = async () => {
+		try {
+			const response = await fetch("http://localhost:5000/slpp/threshold", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ threshold: parseInt(threshold) }),
+			});
+
+			if (!response.ok) {
+				throw new Error("Error updating threshold");
+			}
+
+			setCurrentThreshold(parseInt(threshold));
+			alert("Threshold updated successfully!");
+			setThreshold(""); // Clear the input
+		} catch (error) {
+			console.error("Error updating threshold:", error);
+		}
+	};
 
 	// Handle feedback submission
 	const handleSubmitFeedback = async (petitionId) => {
@@ -33,7 +69,7 @@ function AdminDashboard() {
 					headers: {
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify({ feedback: responseText }), // Using responseText here
+					body: JSON.stringify({ feedback: responseText }),
 				}
 			);
 
@@ -42,13 +78,11 @@ function AdminDashboard() {
 			}
 
 			alert("Feedback submitted successfully!");
-			setResponse(""); // Clear the feedback text area
-
-			// Update the petition's response in the state
+			setResponse("");
 			setPetitions((prevPetitions) =>
 				prevPetitions.map((petition) =>
 					petition.petition_id === petitionId
-						? { ...petition, response: responseText } // Update with the feedback value
+						? { ...petition, response: responseText }
 						: petition
 				)
 			);
@@ -56,24 +90,15 @@ function AdminDashboard() {
 			console.error("Error saving feedback:", error);
 		}
 
-		handleClosePetition(petitionId);
+		handleCloseFeedback();
 	};
 
-	// Logout function to clear local storage
-	const handleLogout = () => {
-		localStorage.removeItem("email");
-		localStorage.removeItem("fullName");
-		alert("You have logged out successfully.");
-		// Optionally, you can redirect the user to the login page or home page
-		window.location.href = "/"; // Redirect to the login page
-	};
-
-	// Close petition feedback section
+	// Close feedback section
 	const handleCloseFeedback = () => {
-		setSelectedPetition(null); // Close feedback section
+		setSelectedPetition(null);
 	};
 
-	// Close petition (change status to closed)
+	// Close petition
 	const handleClosePetition = async (petitionId) => {
 		try {
 			const response = await fetch(
@@ -83,7 +108,7 @@ function AdminDashboard() {
 					headers: {
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify({ status: "closed" }), // Change the petition status to closed
+					body: JSON.stringify({ status: "closed" }),
 				}
 			);
 
@@ -91,11 +116,10 @@ function AdminDashboard() {
 				throw new Error("Error updating petition status");
 			}
 
-			// Update the status in the state
 			setPetitions((prevPetitions) =>
 				prevPetitions.map((petition) =>
 					petition.petition_id === petitionId
-						? { ...petition, status: "closed" } // Change status to closed
+						? { ...petition, status: "closed" }
 						: petition
 				)
 			);
@@ -106,22 +130,51 @@ function AdminDashboard() {
 		}
 	};
 
+	// Logout function
+	const handleLogout = () => {
+		localStorage.removeItem("email");
+		localStorage.removeItem("fullName");
+		alert("You have logged out successfully.");
+		window.location.href = "/";
+	};
+
 	return (
 		<div className="admin-dashboard p-6 bg-gray-100 min-h-screen">
-			<h1 className="text-3xl font-semibold text-center mb-6">
-				Petitions Committee Dashboard
-			</h1>
+			<div className="flex justify-between items-center mb-6">
+				<h1 className="text-3xl font-semibold">
+					Petitions Committee Dashboard
+				</h1>
+				<button
+					onClick={handleLogout}
+					className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600"
+				>
+					Logout
+				</button>
+			</div>
 
-			{/* Logout Button */}
-			<button
-				onClick={handleLogout}
-				className="bg-red-500 text-white py-2 px-4 rounded-md mb-6 hover:bg-red-600"
-			>
-				Logout
-			</button>
+			<div className="mb-6">
+				<h2 className="text-2xl font-semibold mb-2">
+					Current Signature Threshold:{" "}
+					<span className="text-blue-600">{currentThreshold}</span>
+				</h2>
+				<div className="flex items-center space-x-4">
+					<input
+						type="number"
+						value={threshold}
+						onChange={(e) => setThreshold(e.target.value)}
+						className="p-2 border border-gray-300 rounded-md"
+						placeholder="Set signature threshold"
+					/>
+					<button
+						onClick={handleThresholdSubmit}
+						className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
+					>
+						Update Threshold
+					</button>
+				</div>
+			</div>
 
-			{/* Petitions List */}
-			<div className="petitions-list mb-6">
+			<div className="petitions-list">
 				<h2 className="text-2xl font-semibold mb-4">Petitions List</h2>
 				{petitions.length === 0 ? (
 					<p>No petitions available.</p>
@@ -139,7 +192,14 @@ function AdminDashboard() {
 						</thead>
 						<tbody>
 							{petitions.map((petition) => (
-								<tr key={petition.petition_id}>
+								<tr
+									key={petition.petition_id}
+									className={
+										petition.signature_count >= currentThreshold
+											? "text-green-600 font-bold"
+											: ""
+									}
+								>
 									<td className="px-4 py-2 border border-gray-300">
 										{petition.title}
 									</td>
@@ -197,7 +257,7 @@ function AdminDashboard() {
 						<strong>Signature Count:</strong> {selectedPetition.signature_count}
 					</p>
 					<textarea
-						value={responseText} // Changed to responseText
+						value={responseText}
 						onChange={(e) => setResponse(e.target.value)}
 						className="w-full p-2 border border-gray-300 rounded-md mb-4"
 						placeholder="Write feedback"
