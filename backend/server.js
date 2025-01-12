@@ -10,6 +10,8 @@ app.use(cors());
 app.use(express.json());
 
 // Database connection
+// Please enter you connection details for
+// user and password
 const db = mysql.createConnection({
 	host: "localhost",
 	user: "root",
