@@ -403,6 +403,23 @@ app.post("/slpp/sign-petition", (req, res) => {
 	});
 });
 
+app.get("/slpp/signed-petitions", (req, res) => {
+	const { email } = req.query;
+
+	const query =
+		"SELECT petition_id FROM petition_signatures WHERE user_email = ?;";
+
+	db.query(query, email, (err, results) => {
+		if (err) {
+			console.error(err);
+			return res
+				.status(500)
+				.json({ error: "Database error while fetching petitions" });
+		}
+		return res.json({ signedPetitions: results });
+	});
+});
+
 // Start the server
 const port = 5000;
 app.listen(port, () => {

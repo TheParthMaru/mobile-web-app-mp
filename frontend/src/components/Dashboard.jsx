@@ -82,6 +82,19 @@ function Dashboard() {
 
 	// Signing the petitions flow
 	const [signedPetitions, setSignedPetitions] = useState([]);
+	useEffect(() => {
+		// Fetch petitions signed by the current user
+		axios
+			.get("http://localhost:5000/slpp/signed-petitions", { params: { email } })
+			.then((response) => {
+				// Assuming the response contains an array of signed petition IDs
+				const signedIds = response.data.signedPetitions.map(
+					(p) => p.petition_id
+				);
+				setSignedPetitions(signedIds);
+			})
+			.catch((err) => console.error(err));
+	}, [email]);
 	const handleSign = (petitionId) => {
 		console.log("Email: ", email);
 		console.log("Petition ID:", petitionId);
@@ -234,7 +247,7 @@ function Dashboard() {
 									>
 										{signedPetitions.includes(p.petition_id)
 											? "Signed"
-											: "Sign"}
+											: "Sign Petition"}
 									</button>
 								</div>
 							</li>
