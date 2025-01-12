@@ -80,6 +80,30 @@ function Dashboard() {
 	// 		.catch((err) => console.error(err));
 	// };
 
+	// Signing the petitions flow
+	const [signedPetitions, setSignedPetitions] = useState([]);
+	const handleSign = (petitionId) => {
+		console.log("Email: ", email);
+		console.log("Petition ID:", petitionId);
+
+		axios
+			.post("http://localhost:5000/slpp/sign-petition", { email, petitionId })
+			.then(() => {
+				setSignedPetitions((prev) => [...prev, petitionId]);
+				setOtherPetitions((prev) =>
+					prev.map((p) =>
+						p.petition_id === petitionId
+							? { ...p, signature_count: p.signature_count + 1 }
+							: p
+					)
+				);
+			})
+			.catch((err) => {
+				console.error(err);
+				alert(err.response?.data?.message || "Failed to sign petition.");
+			});
+	};
+
 	const handleLogout = () => {
 		localStorage.removeItem("email");
 		localStorage.removeItem("fullName");
@@ -148,8 +172,7 @@ function Dashboard() {
 									<strong>Status: </strong> {p.status}
 								</p>
 								<p className="text-sm text-gray-500 mb-2">
-									<strong>Response: </strong>{" "}
-									{p.response || "No response provided"}
+									<strong>Response: </strong> {p.response}
 								</p>
 								{/* <div className="flex space-x-4">
 									<button
@@ -199,6 +222,21 @@ function Dashboard() {
 									<strong>Response: </strong>{" "}
 									{p.response || "No response provided"}
 								</p>
+								<div className="flex space-x-4">
+									<button
+										onClick={() => handleSign(p.petition_id)}
+										disabled={signedPetitions.includes(p.petition_id)}
+										className={`px-3 py-1 rounded-md transition ${
+											signedPetitions.includes(p.petition_id)
+												? "bg-gray-400 text-white cursor-not-allowed"
+												: "bg-blue-500 text-white hover:bg-blue-600"
+										}`}
+									>
+										{signedPetitions.includes(p.petition_id)
+											? "Signed"
+											: "Sign"}
+									</button>
+								</div>
 							</li>
 						))}
 					</ul>
