@@ -52,32 +52,33 @@ function Dashboard() {
 			.catch((err) => console.error(err));
 	};
 
-	const handleUpdate = () => {
-		axios
-			.put(
-				`http://localhost:5000/slpp/user-petition/${editingPetitionId}`,
-				form
-			)
-			.then(() => {
-				setMyPetitions((prev) =>
-					prev.map((p) =>
-						p.petition_id === editingPetitionId ? { ...p, ...form } : p
-					)
-				);
-				setForm({ title: "", content: "" });
-				setEditingPetitionId(null);
-			})
-			.catch((err) => console.error(err));
-	};
+	// For now, no need to edit and delete petitions
+	// const handleUpdate = () => {
+	// 	axios
+	// 		.put(
+	// 			`http://localhost:5000/slpp/user-petition/${editingPetitionId}`,
+	// 			form
+	// 		)
+	// 		.then(() => {
+	// 			setMyPetitions((prev) =>
+	// 				prev.map((p) =>
+	// 					p.petition_id === editingPetitionId ? { ...p, ...form } : p
+	// 				)
+	// 			);
+	// 			setForm({ title: "", content: "" });
+	// 			setEditingPetitionId(null);
+	// 		})
+	// 		.catch((err) => console.error(err));
+	// };
 
-	const handleDelete = (id) => {
-		axios
-			.delete(`http://localhost:5000/slpp/user-petition/${id}`)
-			.then(() =>
-				setMyPetitions((prev) => prev.filter((p) => p.petition_id !== id))
-			)
-			.catch((err) => console.error(err));
-	};
+	// const handleDelete = (id) => {
+	// 	axios
+	// 		.delete(`http://localhost:5000/slpp/user-petition/${id}`)
+	// 		.then(() =>
+	// 			setMyPetitions((prev) => prev.filter((p) => p.petition_id !== id))
+	// 		)
+	// 		.catch((err) => console.error(err));
+	// };
 
 	const handleLogout = () => {
 		localStorage.removeItem("email");
@@ -150,7 +151,7 @@ function Dashboard() {
 									<strong>Response: </strong>{" "}
 									{p.response || "No response provided"}
 								</p>
-								<div className="flex space-x-4">
+								{/* <div className="flex space-x-4">
 									<button
 										onClick={() => handleDelete(p.petition_id)}
 										className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition"
@@ -166,7 +167,7 @@ function Dashboard() {
 									>
 										Edit
 									</button>
-								</div>
+								</div> */}
 							</li>
 						))}
 					</ul>
